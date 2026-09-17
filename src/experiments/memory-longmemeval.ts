@@ -8,19 +8,20 @@ import { getChatModel } from "../lib/gateway.js";
 import { batchEvaluateSessionRelevance } from "../lib/jev.js";
 
 interface LongMemEvalInstance {
+  question_id: string;
+  question_type: string;
   question: string;
+  question_date: string;
   answer: string;
-  sessions: string[];
-  metadata?: {
-    id?: string;
-    split?: string;
-    num_sessions?: number;
-    total_tokens?: number;
-  };
+  answer_session_ids: string[];
+  haystack_dates: string[];
+  haystack_session_ids: string[];
+  haystack_sessions: Array<Array<{ role: string; content: string }>>;
 }
 
 interface EvalResult {
   instanceId: string;
+  questionType: string;
   question: string;
   goldAnswer: string;
   baselinePrediction: string;
@@ -30,6 +31,9 @@ interface EvalResult {
   totalSessions: number;
   keptSessions: number;
   keepRate: number;
+  filterRecall: number;
+  answerSessionsFound: number;
+  answerSessionsTotal: number;
   baselineTokens: number;
   jevTokens: number;
   jevLatencyMs: number;
@@ -57,11 +61,12 @@ async function loadDataset(): Promise<LongMemEvalInstance[]> {
     return JSON.parse(data);
   }
 
-  const dataPath = `/workspace/data/longmemeval/longmemeval_${SPLIT}_cleaned.json`;
+  const dataPath = `/workspace/data/longmemeval_${SPLIT}_cleaned.json`;
   
   if (!existsSync(dataPath)) {
     console.error(chalk.red(`❌ Dataset not found: ${dataPath}`));
-    console.error(chalk.yellow(`Run: pnpm download:longmemeval`));
+    console.error(chalk.yellow(`Expected path: ${dataPath}`));
+    console.error(chalk.yellow(`If data is elsewhere, copy/symlink to data/ directory`));
     process.exit(1);
   }
 
@@ -70,6 +75,14 @@ async function loadDataset(): Promise<LongMemEvalInstance[]> {
   const instances = JSON.parse(data);
   
   return instances.slice(OFFSET, OFFSET + LIMIT);
+}
+
+function sessionToText(session: Array<{ role: string; content: string }>): string {
+  return session.map(msg => `${msg.role}: ${msg.content}`).join("\n");
+}
+
+function sessionsToText(sessions: Array<Array<{ role: string; content: string }>>): string[] {
+  return sessions.map(sessionToText);
 }
 
 function normalizeAnswer(text: string): string {
@@ -90,7 +103,8 @@ async function runBaseline(instance: LongMemEvalInstance): Promise<{
 }> {
   const start = Date.now();
   
-  const fullHistory = instance.sessions.join("\n\n");
+  const sessionTexts = sessionsToText(instance.haystack_sessions);
+  const fullHistory = sessionTexts.join("\n\n");
   const prompt = `${fullHistory}\n\nQuestion: ${instance.question}\n\nAnswer concisely based on the conversation history above.`;
   
   const result = await generateText({
@@ -112,18 +126,22 @@ async function runBaseline(instance: LongMemEvalInstance): Promise<{
 async function runJevFiltered(instance: LongMemEvalInstance): Promise<{
   prediction: string;
   keptSessions: number;
+  keptSessionIds: string[];
   latencyMs: number;
   tokens: number;
 }> {
   const start = Date.now();
   
+  const sessionTexts = sessionsToText(instance.haystack_sessions);
+  
   const relevance = await batchEvaluateSessionRelevance(
     instance.question,
-    instance.sessions,
+    sessionTexts,
     { threshold: 0.5, batchSize: 512 }
   );
   
-  const keptSessionTexts = instance.sessions.filter((_, i) => relevance[i]);
+  const keptSessionTexts = sessionTexts.filter((_, i) => relevance[i]);
+  const keptSessionIds = instance.haystack_session_ids.filter((_, i) => relevance[i]);
   const keptCount = keptSessionTexts.length;
   
   const filteredHistory = keptSessionTexts.join("\n\n");
@@ -141,6 +159,7 @@ async function runJevFiltered(instance: LongMemEvalInstance): Promise<{
   return {
     prediction: result.text.trim(),
     keptSessions: keptCount,
+    keptSessionIds,
     latencyMs,
     tokens: Math.round(tokens),
   };
@@ -150,32 +169,45 @@ async function evaluateInstance(
   instance: LongMemEvalInstance,
   index: number
 ): Promise<EvalResult> {
-  const instanceId = instance.metadata?.id || `instance-${index}`;
+  const instanceId = instance.question_id;
   
   console.log(chalk.cyan(`\n[${index + 1}] Evaluating: ${instanceId}`));
+  console.log(chalk.gray(`Type: ${instance.question_type}`));
   console.log(chalk.gray(`Question: ${instance.question.slice(0, 80)}...`));
-  console.log(chalk.gray(`Sessions: ${instance.sessions.length}, Gold: ${instance.answer}`));
+  console.log(chalk.gray(`Sessions: ${instance.haystack_sessions.length}, Gold: ${instance.answer}`));
   
   const baseline = await runBaseline(instance);
   console.log(chalk.blue(`  Baseline: "${baseline.prediction}"`));
   
   const jev = await runJevFiltered(instance);
-  console.log(chalk.green(`  Jev+Base: "${jev.prediction}" (kept ${jev.keptSessions}/${instance.sessions.length})`));
+  console.log(chalk.green(`  Jev+Base: "${jev.prediction}" (kept ${jev.keptSessions}/${instance.haystack_sessions.length})`));
   
   const baselineCorrect = checkCorrect(baseline.prediction, instance.answer);
   const jevCorrect = checkCorrect(jev.prediction, instance.answer);
   
+  const answerSessionsFound = jev.keptSessionIds.filter(id => 
+    instance.answer_session_ids.includes(id)
+  ).length;
+  const answerSessionsTotal = instance.answer_session_ids.length;
+  const filterRecall = answerSessionsTotal > 0 ? answerSessionsFound / answerSessionsTotal : 0;
+  
+  console.log(chalk.gray(`  Filter recall: ${answerSessionsFound}/${answerSessionsTotal} answer sessions kept`));
+  
   return {
     instanceId,
+    questionType: instance.question_type,
     question: instance.question,
     goldAnswer: instance.answer,
     baselinePrediction: baseline.prediction,
     baselineCorrect,
     jevPrediction: jev.prediction,
     jevCorrect,
-    totalSessions: instance.sessions.length,
+    totalSessions: instance.haystack_sessions.length,
     keptSessions: jev.keptSessions,
-    keepRate: jev.keptSessions / instance.sessions.length,
+    keepRate: jev.keptSessions / instance.haystack_sessions.length,
+    filterRecall,
+    answerSessionsFound,
+    answerSessionsTotal,
     baselineTokens: baseline.tokens,
     jevTokens: jev.tokens,
     baselineLatencyMs: baseline.latencyMs,
@@ -214,6 +246,7 @@ async function main() {
   const baselineAcc = results.filter((r) => r.baselineCorrect).length / results.length;
   const jevAcc = results.filter((r) => r.jevCorrect).length / results.length;
   const avgKeepRate = results.reduce((sum, r) => sum + r.keepRate, 0) / results.length;
+  const avgFilterRecall = results.reduce((sum, r) => sum + r.filterRecall, 0) / results.length;
   const avgBaselineTokens = results.reduce((sum, r) => sum + r.baselineTokens, 0) / results.length;
   const avgJevTokens = results.reduce((sum, r) => sum + r.jevTokens, 0) / results.length;
   const avgBaselineLatency = results.reduce((sum, r) => sum + r.baselineLatencyMs, 0) / results.length;
@@ -226,6 +259,7 @@ async function main() {
   console.log(`│ Avg Tokens          │ ${avgBaselineTokens.toFixed(0).padStart(12)} │ ${avgJevTokens.toFixed(0).padStart(12)} │`);
   console.log(`│ Avg Latency (ms)    │ ${avgBaselineLatency.toFixed(0).padStart(12)} │ ${avgJevLatency.toFixed(0).padStart(12)} │`);
   console.log(`│ Avg Keep Rate       │ ${'-'.padStart(12)} │ ${(avgKeepRate * 100).toFixed(1)}%`.padEnd(14) + "│");
+  console.log(`│ Filter Recall       │ ${'-'.padStart(12)} │ ${(avgFilterRecall * 100).toFixed(1)}%`.padEnd(14) + "│");
   console.log("└─────────────────────┴──────────────┴──────────────┘");
 
   console.log(chalk.gray(`\n📁 Detailed results: ${outputPath}`));

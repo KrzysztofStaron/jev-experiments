@@ -85,33 +85,69 @@ This runs a simple 4-session example and shows which sessions Jev considers rele
 
 Official long-context memory benchmark comparing Base LLM vs Base+Jev.
 
-#### Download the Dataset
+## Dataset
 
-First, download the LongMemEval dataset from Hugging Face:
+### Data Already on Machine
 
-```bash
-pnpm download:longmemeval
+The LongMemEval dataset is **already on your machine**:
+- **Windows**: `C:\Users\kisie\Documents\jev-experiments\data\longmemeval_s_cleaned.json` (~277MB)
+- **Expected path**: `/workspace/data/longmemeval_s_cleaned.json`
+
+**To use the data**:
+
+On **Windows** (recommended - symlink):
+```powershell
+# From project root
+New-Item -ItemType SymbolicLink -Path "data\longmemeval_s_cleaned.json" -Target "C:\Users\kisie\Documents\jev-experiments\data\longmemeval_s_cleaned.json"
 ```
 
-This downloads:
-- `longmemeval_s_cleaned.json` (~115k tokens, ~40 sessions per instance)
-- `longmemeval_oracle_cleaned.json` (evidence-only sessions)
+Or **copy** (if symlink doesn't work):
+```bash
+# Create data directory
+mkdir -p data
 
-**Note**: Dataset files are **not committed to git** due to size. The `data/longmemeval/` directory is gitignored.
+# Copy the file
+cp "C:\Users\kisie\Documents\jev-experiments\data\longmemeval_s_cleaned.json" data/
+```
+
+On **Linux/Mac**:
+```bash
+mkdir -p data
+ln -s ~/path/to/longmemeval_s_cleaned.json data/longmemeval_s_cleaned.json
+```
+
+### Dataset Schema
+
+Each instance contains:
+- `question_id`, `question_type`, `question`, `question_date`, `answer`
+- `answer_session_ids`: Ground truth relevant session IDs
+- `haystack_session_ids`: All session IDs in haystack
+- `haystack_sessions`: Array of sessions (each session = array of `{role, content}` messages)
+
+Example: `question_type=single-session-user`, ~53 sessions in haystack, question="What degree did I graduate with?", answer="Business Administration"
+
+**Note**: `answer_session_ids` are used only for measuring filter recall (not as input to Jev).
 
 #### Run the Benchmark
 
-**Mock mode** (uses fixture data, requires API key):
+#### Run the Benchmark
+
+**Mock mode** (uses 2 small fixture instances, requires API key):
 ```bash
 pnpm exec tsx src/experiments/memory-longmemeval.ts --mock
 ```
 
-**Live evaluation** (5 instances, ~$0.50):
+**Live evaluation** (20 instances, ~$2, good for testing):
 ```bash
-pnpm exec tsx src/experiments/memory-longmemeval.ts --limit 5
+pnpm exec tsx src/experiments/memory-longmemeval.ts --limit 20
 ```
 
-**Full benchmark** (~500 instances, ⚠️ ~$50-100 cost):
+**Specific range**:
+```bash
+pnpm exec tsx src/experiments/memory-longmemeval.ts --limit 5 --offset 10
+```
+
+**Full benchmark** (⚠️ expensive, ~$50-100):
 ```bash
 pnpm exec tsx src/experiments/memory-longmemeval.ts --limit 500
 ```
@@ -137,6 +173,15 @@ The benchmark compares two approaches:
 | **Baseline** | Full conversation history passed to LLM |
 | **Base+Jev** | Jev filters relevant sessions → LLM answers on subset |
 
+#### Expected Results
+
+The benchmark compares two approaches and tracks filter quality:
+
+| Approach | Description |
+|----------|-------------|
+| **Baseline** | Full conversation history passed to LLM |
+| **Base+Jev** | Jev filters relevant sessions → LLM answers on subset |
+
 **Sample output**:
 
 ```
@@ -149,12 +194,18 @@ The benchmark compares two approaches:
 │ Avg Tokens          │        28000 │         7500 │
 │ Avg Latency (ms)    │         4500 │         2800 │
 │ Avg Keep Rate       │            - │        26.8% │
+│ Filter Recall       │            - │        94.2% │
 └─────────────────────┴──────────────┴──────────────┘
 
 💡 Token savings: 73.2%
 ```
 
-Results are saved to `evals/longmemeval-results.jsonl` with per-instance details.
+**Filter Recall**: % of ground-truth answer sessions that Jev kept (measured via `answer_session_ids`).
+
+Results are saved to `evals/longmemeval-results.jsonl` with per-instance details including:
+- `filterRecall`: Recall of answer sessions
+- `answerSessionsFound` / `answerSessionsTotal`: How many gold sessions were kept
+- Full predictions and correctness
 
 ### Cost Warnings
 
@@ -215,9 +266,15 @@ const result = await evaluate({
 **Key points**:
 - Use `experimental_evaluate`, **not** `generateObject`
 - `state` contains the query and instructions
-- `questions` maps session IDs to relevance questions
+- `questions` maps session IDs to relevance questions (boolean)
 - Can batch many sessions in one call (tested with 512-1024)
-- Returns boolean/score/choice responses per question
+- Returns probability per question; threshold at 0.5 for keep/discard
+
+**Session filtering**:
+1. Convert each haystack session (array of `{role, content}`) to text
+2. Ask Jev: "Is session N relevant to answering the question?"
+3. Keep sessions with probability ≥ 0.5
+4. Measure filter recall against `answer_session_ids` (not used as input!)
 
 See [`src/lib/jev.ts`](src/lib/jev.ts) for the implementation.
 

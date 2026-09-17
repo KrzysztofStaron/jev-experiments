@@ -1,34 +1,58 @@
 [
   {
+    "question_id": "mock-1",
+    "question_type": "single-session-user",
     "question": "What is the capital of France?",
+    "question_date": "2024-01-15",
     "answer": "Paris",
-    "sessions": [
-      "User: Tell me about European capitals.\nAssistant: European capitals are diverse and historic. Paris is the capital of France, known for the Eiffel Tower. Berlin is Germany's capital, Rome is Italy's, and Madrid is Spain's.",
-      "User: What's the weather like today?\nAssistant: I don't have access to real-time weather data, but I can help with general climate information if you specify a location.",
-      "User: Who painted the Mona Lisa?\nAssistant: Leonardo da Vinci painted the Mona Lisa in the early 16th century. It's now housed in the Louvre Museum in Paris.",
-      "User: Tell me about quantum physics.\nAssistant: Quantum physics is the study of matter and energy at the smallest scales, dealing with subatomic particles and their behavior."
-    ],
-    "metadata": {
-      "id": "mock-instance-1",
-      "split": "s",
-      "num_sessions": 4,
-      "total_tokens": 250
-    }
+    "answer_session_ids": ["session-0"],
+    "haystack_dates": ["2024-01-10", "2024-01-11", "2024-01-12", "2024-01-13"],
+    "haystack_session_ids": ["session-0", "session-1", "session-2", "session-3"],
+    "haystack_sessions": [
+      [
+        {"role": "user", "content": "Tell me about European capitals."},
+        {"role": "assistant", "content": "European capitals are diverse and historic. Paris is the capital of France, known for the Eiffel Tower. Berlin is Germany's capital, Rome is Italy's, and Madrid is Spain's."}
+      ],
+      [
+        {"role": "user", "content": "What's the weather like today?"},
+        {"role": "assistant", "content": "I don't have access to real-time weather data, but I can help with general climate information if you specify a location."}
+      ],
+      [
+        {"role": "user", "content": "Who painted the Mona Lisa?"},
+        {"role": "assistant", "content": "Leonardo da Vinci painted the Mona Lisa in the early 16th century. It's now housed in the Louvre Museum in Paris."}
+      ],
+      [
+        {"role": "user", "content": "Tell me about quantum physics."},
+        {"role": "assistant", "content": "Quantum physics is the study of matter and energy at the smallest scales, dealing with subatomic particles and their behavior."}
+      ]
+    ]
   },
   {
+    "question_id": "mock-2",
+    "question_type": "single-session-assistant",
     "question": "Who wrote Romeo and Juliet?",
+    "question_date": "2024-01-20",
     "answer": "William Shakespeare",
-    "sessions": [
-      "User: What are some famous plays?\nAssistant: Some of the most famous plays include Romeo and Juliet by William Shakespeare, Death of a Salesman by Arthur Miller, and Waiting for Godot by Samuel Beckett.",
-      "User: Tell me about Renaissance literature.\nAssistant: Renaissance literature flourished in Europe from the 14th to 17th centuries, with writers like William Shakespeare, Dante, and Cervantes creating enduring masterpieces.",
-      "User: What's your favorite programming language?\nAssistant: I don't have personal preferences, but I can help with many programming languages including Python, JavaScript, TypeScript, and more.",
-      "User: How do I cook pasta?\nAssistant: To cook pasta, bring salted water to a boil, add pasta, and cook for 8-12 minutes depending on the type. Drain and serve with your favorite sauce."
-    ],
-    "metadata": {
-      "id": "mock-instance-2",
-      "split": "s",
-      "num_sessions": 4,
-      "total_tokens": 280
-    }
+    "answer_session_ids": ["session-0", "session-1"],
+    "haystack_dates": ["2024-01-15", "2024-01-16", "2024-01-17", "2024-01-18"],
+    "haystack_session_ids": ["session-0", "session-1", "session-2", "session-3"],
+    "haystack_sessions": [
+      [
+        {"role": "user", "content": "What are some famous plays?"},
+        {"role": "assistant", "content": "Some of the most famous plays include Romeo and Juliet by William Shakespeare, Death of a Salesman by Arthur Miller, and Waiting for Godot by Samuel Beckett."}
+      ],
+      [
+        {"role": "user", "content": "Tell me about Renaissance literature."},
+        {"role": "assistant", "content": "Renaissance literature flourished in Europe from the 14th to 17th centuries, with writers like William Shakespeare, Dante, and Cervantes creating enduring masterpieces."}
+      ],
+      [
+        {"role": "user", "content": "What's your favorite programming language?"},
+        {"role": "assistant", "content": "I don't have personal preferences, but I can help with many programming languages including Python, JavaScript, TypeScript, and more."}
+      ],
+      [
+        {"role": "user", "content": "How do I cook pasta?"},
+        {"role": "assistant", "content": "To cook pasta, bring salted water to a boil, add pasta, and cook for 8-12 minutes depending on the type. Drain and serve with your favorite sauce."}
+      ]
+    ]
   }
 ]

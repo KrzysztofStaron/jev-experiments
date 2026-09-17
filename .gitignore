@@ -4,12 +4,14 @@ dist/
 .env.local
 *.log
 
-# LongMemEval data files (download via script)
-data/longmemeval/*.json
-data/longmemeval/*.jsonl
+# LongMemEval data files (~277MB)
+# Data is on user's machine at:
+# Windows: C:\Users\kisie\Documents\jev-experiments\data\longmemeval_s_cleaned.json
+# Linux/Mac: Symlink or copy to /workspace/data/longmemeval_s_cleaned.json
+data/longmemeval_*.json
+data/*.json
 
 # Keep directory structure and small fixtures
-!data/longmemeval/.gitkeep
 !fixtures/**/*.json
 
 # Evaluation results (can commit summary tables, not full logs)

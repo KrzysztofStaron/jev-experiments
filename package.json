@@ -7,7 +7,7 @@
     "exp:memory": "tsx src/experiments/memory-toy.ts",
     "exp:memory:longmemeval": "tsx src/experiments/memory-longmemeval.ts",
     "exp:pixel": "tsx src/experiments/pixel.ts",
-    "download:longmemeval": "tsx scripts/download-longmemeval.ts",
+    "setup:data": "tsx scripts/download-longmemeval.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
