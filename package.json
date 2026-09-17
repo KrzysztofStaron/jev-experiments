@@ -1,0 +1,26 @@
+{
+  "name": "jev-experiments",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "TypeSafe Jev experiments via Vercel AI Gateway",
+  "scripts": {
+    "exp:image": "tsx src/exp-image/cli.ts",
+    "exp:memory": "tsx src/exp-memory/run.ts",
+    "test:dry": "tsx src/exp-image/cli.ts --mock --prompt \"test pattern\" --size 16"
+  },
+  "dependencies": {
+    "@ai-sdk/openai": "^1.0.0",
+    "ai": "^7.0.105",
+    "dotenv": "^16.4.5",
+    "pngjs": "^7.0.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
