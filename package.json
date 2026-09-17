@@ -1,0 +1,27 @@
+{
+  "name": "jev-experiments",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "exp:memory": "tsx src/experiments/memory-toy.ts",
+    "exp:memory:longmemeval": "tsx src/experiments/memory-longmemeval.ts",
+    "exp:pixel": "tsx src/experiments/pixel.ts",
+    "download:longmemeval": "tsx scripts/download-longmemeval.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ai-sdk/openai": "^4.0.69",
+    "ai": "^7.0.105",
+    "chalk": "^5.3.0",
+    "commander": "^12.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

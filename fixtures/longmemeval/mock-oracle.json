@@ -1,0 +1,15 @@
+[
+  {
+    "question": "What is the capital of France?",
+    "answer": "Paris",
+    "sessions": [
+      "User: Tell me about European capitals.\nAssistant: European capitals are diverse and historic. Paris is the capital of France, known for the Eiffel Tower."
+    ],
+    "metadata": {
+      "id": "mock-oracle-1",
+      "split": "oracle",
+      "num_sessions": 1,
+      "total_tokens": 50
+    }
+  }
+]
