@@ -1,4 +1,4 @@
-﻿{
+{
   "name": "jev-experiments",
   "version": "0.1.0",
   "type": "module",
@@ -6,7 +6,7 @@
   "scripts": {
     "exp:image": "tsx src/exp-image/cli.ts",
     "exp:memory": "tsx src/exp-memory/run.ts",
-    "test:dry": "JEV_MOCK=1 pnpm exp:image --mock --prompt \"test pattern\" --size 16"
+    "test:dry": "tsx src/exp-image/cli.ts --mock --prompt \"test pattern\" --size 16"
   },
   "dependencies": {
     "@ai-sdk/openai": "^1.0.0",
