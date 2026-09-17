@@ -1,0 +1,8 @@
+{"question": "What accuracy did Dr. Chen's latest model achieve on ImageNet?", "answer": "94.7%"}
+{"question": "How many images was the model trained on?", "answer": "14 million"}
+{"question": "How long did the training process take?", "answer": "3 weeks"}
+{"question": "How many GPUs were used for training?", "answer": "256"}
+{"question": "What is the computational cost reduction compared to previous methods?", "answer": "40%"}
+{"question": "When is next year's conference scheduled?", "answer": "March 20-22, 2025"}
+{"question": "Where will next year's conference be held?", "answer": "Austin, Texas"}
+{"question": "How many transformer layers does the model use?", "answer": "8"}
